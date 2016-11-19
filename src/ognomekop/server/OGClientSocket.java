@@ -8,16 +8,28 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 
-public class OGClient extends Thread {
+/**
+ * The handler for a client accepted by OGServer. The handler opens a continuous connection with the client, and
+ * processes all data received by the client, and sent to the client.
+ */
+public class OGClientSocket extends Thread {
     protected Socket socket;
 
-    public OGClient(Socket client) {
+    /**
+     * The constructor for OGClientSocket, which simply saves the socket for future interactions.
+     *
+     * @param client The actual socket that will be used to communicate with the client.
+     */
+    public OGClientSocket(Socket client) {
         this.socket = client;
     }
 
+    /**
+     * The main loop for the client handler. This will continuously read input from the client, parse the input into
+     * packets, and handle each packet using its respective handler.
+     */
     @Override
     public void run() {
-        String line;
         try (ByteDataInputStream in = new ByteDataInputStream(socket.getInputStream());
              DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
             while (true) {
@@ -30,7 +42,7 @@ public class OGClient extends Thread {
                 Class<? extends Packet> packetClass = Packets.getById(type);
                 if (packetClass != null) {
                     try {
-                        Packet packet = (Packet) packetClass.newInstance();
+                        Packet packet = packetClass.newInstance();
                         packet.read(new ByteDataInputStream(new ByteArrayInputStream(bytes)), length);
                         handlePacket(packet);
                     } catch (InstantiationException | IllegalAccessException e) {
